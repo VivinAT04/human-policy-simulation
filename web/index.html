@@ -232,6 +232,26 @@ button {
             </option>
         </select>
 
+        <select
+            id="noiseSelect"
+            onchange="changeNoise(this.value)"
+            style="
+                padding:10px 14px;
+                border:1px solid #d1d5db;
+                border-radius:8px;
+                background:white;
+                font-weight:700;
+                min-width:120px;
+            "
+        >
+            <option value="0.0">Noise 0%</option>
+            <option value="0.1">Noise 10%</option>
+            <option value="0.2">Noise 20%</option>
+            <option value="0.3">Noise 30%</option>
+            <option value="0.4">Noise 40%</option>
+            <option value="0.5">Noise 50%</option>
+        </select>
+
         <button class="primary" onclick="play()">
             ▶ Run
         </button>
@@ -283,6 +303,31 @@ button {
     </div>
 
     <div class="metric">
+        <small>Executed Action</small>
+        <strong id="executedAction">—</strong>
+    </div>
+
+    <div class="metric">
+        <small>Noise</small>
+        <strong id="noiseValue">0%</strong>
+    </div>
+
+    <div class="metric">
+        <small>Corrupted</small>
+        <strong id="corrupted">NO</strong>
+    </div>
+
+    <div class="metric">
+        <small>Corrupted Actions</small>
+        <strong id="corruptedTotal">0</strong>
+    </div>
+
+    <div class="metric">
+        <small>Blocked Moves</small>
+        <strong id="blockedMoves">0</strong>
+    </div>
+
+    <div class="metric">
         <small id="specialLabel">DP Convergence</small>
         <strong id="iterations">—</strong>
     </div>
@@ -331,98 +376,180 @@ button {
 <script>
 
 let simulationData;
+let cleanData;
 let data;
+
 let currentPolicy = "dp";
+let currentNoise = "0.0";
+
 let current = 0;
 let timer = null;
 
 
 async function initialise() {
 
-    const response = await fetch(
-        "policy_trajectories.json?ts=" + Date.now()
-    );
+    const [
+        noiseResponse,
+        cleanResponse
+    ] = await Promise.all([
+        fetch(
+            "noise_trajectories.json?ts=" +
+            Date.now()
+        ),
+        fetch(
+            "policy_trajectories.json?ts=" +
+            Date.now()
+        )
+    ]);
 
-    if (!response.ok) {
+    if (!noiseResponse.ok) {
         throw new Error(
-            "Could not load policy_trajectories.json"
+            "Could not load noise trajectories."
         );
     }
 
-    simulationData = await response.json();
+    if (!cleanResponse.ok) {
+        throw new Error(
+            "Could not load clean policy data."
+        );
+    }
 
-    changePolicy(
-        simulationData.default_policy || "dp"
-    );
+    simulationData =
+        await noiseResponse.json();
+
+    cleanData =
+        await cleanResponse.json();
+
+    loadSimulation();
 }
 
 
-function convertPolicyData(policy) {
+function changePolicy(value) {
 
-    return {
-        rows: policy.rows,
-        cols: policy.cols,
+    currentPolicy = value;
+
+    pause();
+    loadSimulation();
+}
+
+
+function changeNoise(value) {
+
+    currentNoise = value;
+
+    pause();
+    loadSimulation();
+}
+
+
+function loadSimulation() {
+
+    const policy =
+        simulationData
+            .policies[currentPolicy];
+
+    const run =
+        policy
+            .noise_runs[currentNoise];
+
+    const cleanPolicy =
+        cleanData
+            .policies[currentPolicy];
+
+    data = {
+        rows:
+            simulationData.rows,
+
+        cols:
+            simulationData.cols,
 
         start: [
-            policy.start.row,
-            policy.start.col
+            simulationData.start.row,
+            simulationData.start.col
         ],
 
         goal: [
-            policy.goal.row,
-            policy.goal.col
+            simulationData.goal.row,
+            simulationData.goal.col
         ],
 
-        actions: policy.total_actions,
-        total_reward: policy.total_reward,
-        blocked_moves: policy.blocked_moves,
-        success: policy.success,
+        display_name:
+            policy.display_name,
 
-        display_name: policy.display_name,
-        algorithm: policy.algorithm,
+        algorithm:
+            policy.algorithm,
 
-        average_planning_ms:
-            policy.average_planning_ms,
+        success:
+            run.success,
 
-        extra: policy.extra,
+        actions:
+            run.total_actions,
 
-        steps: policy.trajectory.map(item => ({
-            step: item.step,
-            row: item.state.row,
-            col: item.state.col,
-            heading: item.state.heading,
-            action: item.action,
-            reward: item.reward,
-            blocked: item.blocked
-        }))
+        total_reward:
+            run.total_reward,
+
+        blocked_moves:
+            run.blocked_moves,
+
+        corrupted_actions:
+            run.corrupted_actions,
+
+        noise_percent:
+            run.noise_percent,
+
+        clean_extra:
+            cleanPolicy.extra,
+
+        steps:
+            run.trajectory.map(
+                item => ({
+                    step:
+                        item.step,
+
+                    row:
+                        item.state.row,
+
+                    col:
+                        item.state.col,
+
+                    heading:
+                        item.state.heading,
+
+                    intended_action:
+                        item.intended_action,
+
+                    executed_action:
+                        item.executed_action,
+
+                    corrupted:
+                        item.corrupted,
+
+                    blocked:
+                        item.blocked,
+
+                    reward:
+                        item.reward
+                })
+            )
     };
-}
-
-
-function changePolicy(policyId) {
-
-    pause();
-
-    currentPolicy = policyId;
-
-    document.getElementById(
-        "policySelect"
-    ).value = policyId;
-
-    const raw =
-        simulationData.policies[policyId];
-
-    data = convertPolicyData(raw);
 
     current = 0;
 
-    updatePolicyPanel();
+    document.getElementById(
+        "policySelect"
+    ).value = currentPolicy;
+
+    document.getElementById(
+        "noiseSelect"
+    ).value = currentNoise;
+
+    updatePanel();
     createGrid();
     showStep(0);
 }
 
 
-function updatePolicyPanel() {
+function updatePanel() {
 
     document.getElementById(
         "algorithm"
@@ -440,6 +567,21 @@ function updatePolicyPanel() {
         Number(
             data.total_reward
         ).toFixed(1);
+
+    document.getElementById(
+        "noiseValue"
+    ).textContent =
+        data.noise_percent + "%";
+
+    document.getElementById(
+        "corruptedTotal"
+    ).textContent =
+        data.corrupted_actions;
+
+    document.getElementById(
+        "blockedMoves"
+    ).textContent =
+        data.blocked_moves;
 
     const label =
         document.getElementById(
@@ -462,7 +604,8 @@ function updatePolicyPanel() {
             "DP Convergence";
 
         value.textContent =
-            data.extra.convergence_iterations;
+            data.clean_extra
+                .convergence_iterations;
 
         trajectoryLabel.textContent =
             "DP trajectory";
@@ -476,9 +619,10 @@ function updatePolicyPanel() {
 
         value.textContent =
             Number(
-                data.extra.training_episodes
-            ).toLocaleString() +
-            " episodes";
+                data.clean_extra
+                    .training_episodes
+            ).toLocaleString()
+            + " episodes";
 
         trajectoryLabel.textContent =
             "Q-Learning trajectory";
@@ -489,8 +633,9 @@ function updatePolicyPanel() {
             "Search Budget";
 
         value.textContent =
-            data.extra.simulations_per_action +
-            " simulations/action";
+            data.clean_extra
+                .simulations_per_action
+            + " simulations/action";
 
         trajectoryLabel.textContent =
             "MCTS trajectory";
@@ -524,7 +669,9 @@ function createGrid() {
         ) {
 
             const cell =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
             cell.className = "cell";
 
@@ -550,9 +697,7 @@ function createGrid() {
 
                 marker.textContent = "A";
 
-                cell.appendChild(
-                    marker
-                );
+                cell.appendChild(marker);
             }
 
             if (
@@ -574,9 +719,7 @@ function createGrid() {
 
                 marker.textContent = "B";
 
-                cell.appendChild(
-                    marker
-                );
+                cell.appendChild(marker);
             }
 
             grid.appendChild(cell);
@@ -627,9 +770,8 @@ function showStep(index) {
             `cell-${step.row}-${step.col}`
         );
 
-    if (!cell) {
+    if (!cell)
         return;
-    }
 
     cell.classList.add(
         "visited"
@@ -670,7 +812,19 @@ function showStep(index) {
     document.getElementById(
         "action"
     ).textContent =
-        step.action;
+        step.intended_action;
+
+    document.getElementById(
+        "executedAction"
+    ).textContent =
+        step.executed_action;
+
+    document.getElementById(
+        "corrupted"
+    ).textContent =
+        step.corrupted
+            ? "YES"
+            : "NO";
 
     const status =
         document.getElementById(
@@ -680,26 +834,43 @@ function showStep(index) {
     if (index === 0) {
 
         status.textContent =
-            `Wheelchair at start position A. ` +
-            `${data.display_name} ready.`;
+            `${data.display_name} ready ` +
+            `with ${data.noise_percent}% noise.`;
 
     } else if (
         index ===
         data.steps.length - 1
     ) {
 
-        status.innerHTML =
-            "<strong>Goal reached ✓</strong><br>" +
-            `${data.display_name} reached B ` +
-            `in ${data.actions} actions.`;
+        if (data.success) {
+
+            status.innerHTML =
+                "<strong>Goal reached ✓</strong><br>" +
+                `${data.display_name} reached B ` +
+                `in ${data.actions} actions.`;
+
+        } else {
+
+            status.innerHTML =
+                "<strong>Goal not reached</strong><br>" +
+                `${data.display_name} stopped after ` +
+                `${data.actions} actions.`;
+        }
 
         pause();
+
+    } else if (
+        step.corrupted
+    ) {
+
+        status.textContent =
+            `Noise changed ${step.intended_action} ` +
+            `→ ${step.executed_action}.`;
 
     } else {
 
         status.textContent =
-            `${data.display_name} selected ` +
-            `${step.action}.`;
+            `Executed ${step.executed_action}.`;
     }
 }
 
@@ -714,10 +885,7 @@ function nextStep() {
     }
 
     current++;
-
-    showStep(
-        current
-    );
+    showStep(current);
 }
 
 
@@ -747,7 +915,7 @@ function play() {
             nextStep();
 
         },
-        250
+        180
     );
 }
 
@@ -756,10 +924,7 @@ function pause() {
 
     if (timer) {
 
-        clearInterval(
-            timer
-        );
-
+        clearInterval(timer);
         timer = null;
     }
 }
@@ -794,16 +959,18 @@ function resetSimulation() {
 }
 
 
-initialise().catch(error => {
+initialise().catch(
+    error => {
 
-    console.error(error);
+        console.error(error);
 
-    document.getElementById(
-        "status"
-    ).textContent =
-        "Failed to load policy data: " +
-        error.message;
-});
+        document.getElementById(
+            "status"
+        ).textContent =
+            "Failed to load simulation: "
+            + error.message;
+    }
+);
 
 </script>
 
