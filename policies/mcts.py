@@ -287,20 +287,83 @@ class MCTSPolicy:
 
         return total_return
 
-    @staticmethod
+    def _combine_returns(
+        self,
+        path_rewards: list[float],
+        rollout_return: float,
+    ) -> float:
+        """
+        Combine tree-path rewards with a rollout return.
+
+        rollout_return is measured from the rollout start
+        state, so each preceding tree reward contributes
+        exactly one additional gamma discount.
+        """
+
+        total_return = rollout_return
+
+        for reward in reversed(path_rewards):
+            total_return = (
+                reward
+                + self.gamma * total_return
+            )
+
+        return total_return
+
     def _backpropagate(
+        self,
         node: MCTSNode,
-        reward: float,
+        path_rewards: list[float],
+        rollout_return: float,
     ) -> None:
+        """
+        Backpropagate discounted action returns.
+
+        A non-root node represents the action taken from its
+        parent to reach that node. Therefore its statistics
+        must include that transition reward:
+
+            Q(parent, action)
+                = reward + gamma * future_return
+
+        This keeps child.mean_reward directly comparable
+        during UCT selection and final root-action choice.
+        """
 
         current = node
+        future_return = rollout_return
+        reward_index = len(path_rewards) - 1
 
-        while current is not None:
+        while current.parent is not None:
+
+            if reward_index < 0:
+                raise RuntimeError(
+                    "MCTS tree depth and path rewards "
+                    "are inconsistent."
+                )
+
+            action_return = (
+                path_rewards[reward_index]
+                + self.gamma * future_return
+            )
 
             current.visits += 1
-            current.total_reward += reward
+            current.total_reward += action_return
 
+            future_return = action_return
+            reward_index -= 1
             current = current.parent
+
+        # Root has no action_from_parent, but its visit count
+        # is required by the UCT exploration term.
+        current.visits += 1
+        current.total_reward += future_return
+
+        if reward_index != -1:
+            raise RuntimeError(
+                "Unused MCTS path rewards remained after "
+                "backpropagation."
+            )
 
     def action(
         self,
@@ -376,24 +439,21 @@ class MCTSPolicy:
             #   rollout reward
             # --------------------------------------------
 
-            total_return = (
-                (self.gamma ** len(path_rewards))
-                * rollout_return
-            )
-
-            for reward in reversed(path_rewards):
-                total_return = (
-                    reward
-                    + self.gamma * total_return
-                )
-
             # --------------------------------------------
             # BACKPROPAGATION
+            # --------------------------------------------
+            #
+            # Each tree node stores a return measured from
+            # that node's own state. The rollout-start node
+            # receives rollout_return directly; ancestors
+            # incorporate their transition reward and one
+            # gamma discount at each level.
             # --------------------------------------------
 
             self._backpropagate(
                 node,
-                total_return,
+                path_rewards,
+                rollout_return,
             )
 
         self.last_simulations = self.simulations
