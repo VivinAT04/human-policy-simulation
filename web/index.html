@@ -252,6 +252,25 @@ button {
             <option value="0.5">Noise 50%</option>
         </select>
 
+        <select
+            id="frequencySelect"
+            onchange="changeFrequency(this.value)"
+            style="
+                padding:10px 14px;
+                border:1px solid #d1d5db;
+                border-radius:8px;
+                background:white;
+                font-weight:700;
+                min-width:130px;
+            "
+        >
+            <option value="20">20 Hz</option>
+            <option value="10">10 Hz</option>
+            <option value="5">5 Hz</option>
+            <option value="2">2 Hz</option>
+            <option value="1">1 Hz</option>
+        </select>
+
         <button class="primary" onclick="play()">
             ▶ Run
         </button>
@@ -268,6 +287,21 @@ button {
             Reset
         </button>
 
+    </div>
+
+    <div
+        id="frequencyExplanation"
+        style="
+            margin-top:12px;
+            font-size:13px;
+            line-height:1.5;
+            color:#6b7280;
+        "
+    >
+        Control frequency represents how often a new
+        physiological command becomes available.
+        Lower frequency increases response and completion
+        time; discrete actions are executed once per update.
     </div>
 
 </section>
@@ -328,6 +362,31 @@ button {
     </div>
 
     <div class="metric">
+        <small>Control Frequency</small>
+        <strong id="frequencyValue">20 Hz</strong>
+    </div>
+
+    <div class="metric">
+        <small>Update Interval</small>
+        <strong id="holdValue">0.05 s</strong>
+    </div>
+
+    <div class="metric">
+        <small>Control Event</small>
+        <strong id="decisionType">—</strong>
+    </div>
+
+    <div class="metric">
+        <small>Policy Decisions</small>
+        <strong id="policyDecisions">0</strong>
+    </div>
+
+    <div class="metric">
+        <small>Elapsed Time</small>
+        <strong id="elapsedTime">0.00 s</strong>
+    </div>
+
+    <div class="metric">
         <small id="specialLabel">DP Convergence</small>
         <strong id="iterations">—</strong>
     </div>
@@ -375,12 +434,13 @@ button {
 
 <script>
 
-let simulationData;
+let experimentData;
 let cleanData;
 let data;
 
 let currentPolicy = "dp";
 let currentNoise = "0.0";
+let currentFrequency = "20";
 
 let current = 0;
 let timer = null;
@@ -389,33 +449,33 @@ let timer = null;
 async function initialise() {
 
     const [
-        noiseResponse,
+        experimentResponse,
         cleanResponse
     ] = await Promise.all([
         fetch(
-            "noise_trajectories.json?ts=" +
-            Date.now()
+            "experiment_trajectories.json?ts="
+            + Date.now()
         ),
         fetch(
-            "policy_trajectories.json?ts=" +
-            Date.now()
+            "policy_trajectories.json?ts="
+            + Date.now()
         )
     ]);
 
-    if (!noiseResponse.ok) {
+    if (!experimentResponse.ok) {
         throw new Error(
-            "Could not load noise trajectories."
+            "Could not load experiment trajectories."
         );
     }
 
     if (!cleanResponse.ok) {
         throw new Error(
-            "Could not load clean policy data."
+            "Could not load policy metadata."
         );
     }
 
-    simulationData =
-        await noiseResponse.json();
+    experimentData =
+        await experimentResponse.json();
 
     cleanData =
         await cleanResponse.json();
@@ -442,15 +502,25 @@ function changeNoise(value) {
 }
 
 
+function changeFrequency(value) {
+
+    currentFrequency = value;
+
+    pause();
+    loadSimulation();
+}
+
+
 function loadSimulation() {
 
     const policy =
-        simulationData
+        experimentData
             .policies[currentPolicy];
 
     const run =
         policy
-            .noise_runs[currentNoise];
+            .runs[currentNoise]
+            [currentFrequency];
 
     const cleanPolicy =
         cleanData
@@ -458,19 +528,19 @@ function loadSimulation() {
 
     data = {
         rows:
-            simulationData.rows,
+            experimentData.rows,
 
         cols:
-            simulationData.cols,
+            experimentData.cols,
 
         start: [
-            simulationData.start.row,
-            simulationData.start.col
+            experimentData.start.row,
+            experimentData.start.col
         ],
 
         goal: [
-            simulationData.goal.row,
-            simulationData.goal.col
+            experimentData.goal.row,
+            experimentData.goal.col
         ],
 
         display_name:
@@ -482,8 +552,8 @@ function loadSimulation() {
         success:
             run.success,
 
-        actions:
-            run.total_actions,
+        total_actions:
+            run.policy_decisions,
 
         total_reward:
             run.total_reward,
@@ -491,11 +561,26 @@ function loadSimulation() {
         blocked_moves:
             run.blocked_moves,
 
-        corrupted_actions:
-            run.corrupted_actions,
+        corrupted_decisions:
+            run.corrupted_decisions,
+
+        policy_decisions:
+            run.policy_decisions,
+
+        elapsed_seconds:
+            run.elapsed_seconds,
 
         noise_percent:
             run.noise_percent,
+
+        control_hz:
+            run.control_hz,
+
+        update_interval_seconds:
+            run.update_interval_seconds,
+
+        ticks_between_updates:
+            run.ticks_between_updates,
 
         clean_extra:
             cleanPolicy.extra,
@@ -503,8 +588,14 @@ function loadSimulation() {
         steps:
             run.trajectory.map(
                 item => ({
-                    step:
-                        item.step,
+                    decision:
+                        item.decision,
+
+                    simulation_tick:
+                        item.simulation_tick,
+
+                    time_seconds:
+                        item.time_seconds,
 
                     row:
                         item.state.row,
@@ -543,6 +634,10 @@ function loadSimulation() {
         "noiseSelect"
     ).value = currentNoise;
 
+    document.getElementById(
+        "frequencySelect"
+    ).value = currentFrequency;
+
     updatePanel();
     createGrid();
     showStep(0);
@@ -559,7 +654,7 @@ function updatePanel() {
     document.getElementById(
         "actions"
     ).textContent =
-        data.actions;
+        data.total_actions;
 
     document.getElementById(
         "reward"
@@ -576,12 +671,43 @@ function updatePanel() {
     document.getElementById(
         "corruptedTotal"
     ).textContent =
-        data.corrupted_actions;
+        data.corrupted_decisions;
 
     document.getElementById(
         "blockedMoves"
     ).textContent =
         data.blocked_moves;
+
+    document.getElementById(
+        "frequencyValue"
+    ).textContent =
+        data.control_hz + " Hz";
+
+    document.getElementById(
+        "holdValue"
+    ).textContent =
+        Number(
+            data.update_interval_seconds
+        ).toFixed(2)
+        + " s";
+
+    document.getElementById(
+        "policyDecisions"
+    ).textContent =
+        data.policy_decisions;
+
+    document.getElementById(
+        "elapsedTime"
+    ).textContent =
+        Number(
+            data.elapsed_seconds
+        ).toFixed(2)
+        + " s";
+
+    document.getElementById(
+        "decisionType"
+    ).textContent =
+        "CONTROL UPDATE";
 
     const label =
         document.getElementById(
@@ -646,7 +772,9 @@ function updatePanel() {
 function createGrid() {
 
     const grid =
-        document.getElementById("grid");
+        document.getElementById(
+            "grid"
+        );
 
     grid.style.gridTemplateColumns =
         `repeat(${data.cols}, 1fr)`;
@@ -673,14 +801,15 @@ function createGrid() {
                     "div"
                 );
 
-            cell.className = "cell";
+            cell.className =
+                "cell";
 
             cell.id =
                 `cell-${row}-${col}`;
 
             if (
-                row === data.start[0] &&
-                col === data.start[1]
+                row === data.start[0]
+                && col === data.start[1]
             ) {
 
                 cell.classList.add(
@@ -695,14 +824,17 @@ function createGrid() {
                 marker.className =
                     "marker start-marker";
 
-                marker.textContent = "A";
+                marker.textContent =
+                    "A";
 
-                cell.appendChild(marker);
+                cell.appendChild(
+                    marker
+                );
             }
 
             if (
-                row === data.goal[0] &&
-                col === data.goal[1]
+                row === data.goal[0]
+                && col === data.goal[1]
             ) {
 
                 cell.classList.add(
@@ -717,18 +849,25 @@ function createGrid() {
                 marker.className =
                     "marker goal-marker";
 
-                marker.textContent = "B";
+                marker.textContent =
+                    "B";
 
-                cell.appendChild(marker);
+                cell.appendChild(
+                    marker
+                );
             }
 
-            grid.appendChild(cell);
+            grid.appendChild(
+                cell
+            );
         }
     }
 }
 
 
-function headingArrow(heading) {
+function headingArrow(
+    heading
+) {
 
     if (heading === "NORTH")
         return "↑";
@@ -746,10 +885,13 @@ function headingArrow(heading) {
 }
 
 
-function showStep(index) {
+function showStep(
+    index
+) {
 
     if (
-        index >= data.steps.length
+        index >=
+        data.steps.length
     ) {
         return;
     }
@@ -797,7 +939,8 @@ function showStep(index) {
     document.getElementById(
         "step"
     ).textContent =
-        `${step.step} / ${data.actions}`;
+        `${step.decision} / `
+        + `${data.total_actions}`;
 
     document.getElementById(
         "position"
@@ -826,6 +969,21 @@ function showStep(index) {
             ? "YES"
             : "NO";
 
+    document.getElementById(
+        "decisionType"
+    ).textContent =
+        step.decision === 0
+            ? "START"
+            : "CONTROL UPDATE";
+
+    document.getElementById(
+        "elapsedTime"
+    ).textContent =
+        Number(
+            step.time_seconds
+        ).toFixed(2)
+        + " s";
+
     const status =
         document.getElementById(
             "status"
@@ -834,8 +992,11 @@ function showStep(index) {
     if (index === 0) {
 
         status.textContent =
-            `${data.display_name} ready ` +
-            `with ${data.noise_percent}% noise.`;
+            `${data.display_name} ready — `
+            + `${data.noise_percent}% noise, `
+            + `${data.control_hz} Hz control `
+            + `(${data.update_interval_seconds.toFixed(2)} s `
+            + `between commands).`;
 
     } else if (
         index ===
@@ -845,16 +1006,16 @@ function showStep(index) {
         if (data.success) {
 
             status.innerHTML =
-                "<strong>Goal reached ✓</strong><br>" +
-                `${data.display_name} reached B ` +
-                `in ${data.actions} actions.`;
+                "<strong>Goal reached ✓</strong><br>"
+                + `${data.display_name} reached B with `
+                + `${data.policy_decisions} control decisions `
+                + `in ${data.elapsed_seconds.toFixed(2)} s.`;
 
         } else {
 
             status.innerHTML =
-                "<strong>Goal not reached</strong><br>" +
-                `${data.display_name} stopped after ` +
-                `${data.actions} actions.`;
+                "<strong>Goal not reached</strong><br>"
+                + `Maximum control decisions reached.`;
         }
 
         pause();
@@ -864,13 +1025,19 @@ function showStep(index) {
     ) {
 
         status.textContent =
-            `Noise changed ${step.intended_action} ` +
-            `→ ${step.executed_action}.`;
+            `Noisy control update: `
+            + `${step.intended_action} → `
+            + `${step.executed_action}. `
+            + `Next command available after `
+            + `${data.update_interval_seconds.toFixed(2)} s.`;
 
     } else {
 
         status.textContent =
-            `Executed ${step.executed_action}.`;
+            `Control update: `
+            + `${step.executed_action}. `
+            + `Next command available after `
+            + `${data.update_interval_seconds.toFixed(2)} s.`;
     }
 }
 
@@ -885,7 +1052,10 @@ function nextStep() {
     }
 
     current++;
-    showStep(current);
+
+    showStep(
+        current
+    );
 }
 
 
@@ -901,6 +1071,12 @@ function play() {
         resetSimulation();
     }
 
+    /*
+     * Browser animation is deliberately kept readable.
+     * It is NOT real-time playback.
+     *
+     * Scientific elapsed time is displayed separately.
+     */
     timer = setInterval(
         () => {
 
@@ -908,6 +1084,7 @@ function play() {
                 current >=
                 data.steps.length - 1
             ) {
+
                 pause();
                 return;
             }
@@ -915,7 +1092,7 @@ function play() {
             nextStep();
 
         },
-        180
+        120
     );
 }
 
@@ -924,7 +1101,10 @@ function pause() {
 
     if (timer) {
 
-        clearInterval(timer);
+        clearInterval(
+            timer
+        );
+
         timer = null;
     }
 }
@@ -955,14 +1135,18 @@ function resetSimulation() {
             el => el.remove()
         );
 
-    showStep(0);
+    showStep(
+        0
+    );
 }
 
 
 initialise().catch(
     error => {
 
-        console.error(error);
+        console.error(
+            error
+        );
 
         document.getElementById(
             "status"

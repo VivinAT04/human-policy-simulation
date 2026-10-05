@@ -1,4 +1,20 @@
-"""Control-update frequency model for discrete wheelchair simulation."""
+"""Control-update frequency model for the discrete wheelchair simulation.
+
+In the discrete-grid case study, control frequency represents the rate at
+which a new physiological/BCI command becomes available.
+
+Each received command produces exactly one discrete environment action.
+The wheelchair does not repeatedly execute LEFT, RIGHT, FORWARD or STOP
+between command arrivals.
+
+Therefore, in this discrete model:
+
+    noise     -> affects action accuracy, trajectory and reward
+    frequency -> affects command latency and completion time
+
+A future continuous-dynamics model can instead represent persistent
+linear/angular velocity between control updates.
+"""
 
 from __future__ import annotations
 
