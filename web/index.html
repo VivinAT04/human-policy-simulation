@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Human Policy Simulation</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f5f7;
+    color: #171717;
+}
+
+header {
+    background: #111827;
+    color: white;
+    padding: 20px 28px;
+}
+
+header h1 {
+    margin: 0 0 5px;
+    font-size: 24px;
+}
+
+header p {
+    margin: 0;
+    color: #cbd5e1;
+}
+
+main {
+    display: grid;
+    grid-template-columns: minmax(600px, 1fr) 320px;
+    gap: 24px;
+    padding: 24px;
+    max-width: 1250px;
+    margin: auto;
+}
+
+.panel {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
+
+.grid-wrap {
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+}
+
+#grid {
+    display: grid;
+    width: min(72vh, 700px);
+    height: min(72vh, 700px);
+    border: 2px solid #111827;
+}
+
+.cell {
+    position: relative;
+    border: 1px solid #e5e7eb;
+    background: white;
+}
+
+.start {
+    background: #dbeafe;
+}
+
+.goal {
+    background: #dcfce7;
+}
+
+.visited {
+    background: #fef3c7;
+}
+
+.cell-label {
+    position: absolute;
+    font-size: 8px;
+    left: 2px;
+    top: 1px;
+    opacity: .35;
+}
+
+.marker {
+    position: absolute;
+    inset: 15%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 50%;
+}
+
+.start-marker {
+    background: #2563eb;
+    color: white;
+}
+
+.goal-marker {
+    background: #16a34a;
+    color: white;
+}
+
+#wheelchair {
+    position: absolute;
+    inset: 8%;
+    background: #111827;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    z-index: 10;
+    transition: transform .2s;
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+button {
+    border: 0;
+    border-radius: 7px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.primary {
+    background: #111827;
+    color: white;
+}
+
+.secondary {
+    background: #e5e7eb;
+}
+
+.metric {
+    padding: 12px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.metric small {
+    color: #6b7280;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.metric strong {
+    font-size: 18px;
+}
+
+.status {
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    line-height: 1.6;
+}
+
+.legend {
+    margin-top: 20px;
+    font-size: 13px;
+    line-height: 2;
+}
+
+.box {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    margin-right: 7px;
+    vertical-align: middle;
+    border: 1px solid #aaa;
+}
+
+@media (max-width: 900px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>Human Policy Simulation</h1>
+    <p>Dynamic Programming · Value Iteration · 20×20 Wheelchair Grid</p>
+</header>
+
+<main>
+
+<section class="panel">
+
+    <div class="grid-wrap">
+        <div id="grid"></div>
+    </div>
+
+    <div class="controls">
+        <button class="primary" onclick="play()">▶ Run DP</button>
+        <button class="secondary" onclick="pause()">⏸ Pause</button>
+        <button class="secondary" onclick="nextStep()">Next Step</button>
+        <button class="secondary" onclick="resetSimulation()">Reset</button>
+    </div>
+
+</section>
+
+
+<aside class="panel">
+
+    <h2 style="margin-top:0">Policy</h2>
+
+    <div class="metric">
+        <small>Algorithm</small>
+        <strong id="algorithm">—</strong>
+    </div>
+
+    <div class="metric">
+        <small>Current Step</small>
+        <strong id="step">0</strong>
+    </div>
+
+    <div class="metric">
+        <small>Position</small>
+        <strong id="position">—</strong>
+    </div>
+
+    <div class="metric">
+        <small>Heading</small>
+        <strong id="heading">—</strong>
+    </div>
+
+    <div class="metric">
+        <small>Policy Action</small>
+        <strong id="action">—</strong>
+    </div>
+
+    <div class="metric">
+        <small>DP Convergence</small>
+        <strong id="iterations">—</strong>
+    </div>
+
+    <div class="metric">
+        <small>Total Actions</small>
+        <strong id="actions">—</strong>
+    </div>
+
+    <div class="metric">
+        <small>Total Reward</small>
+        <strong id="reward">—</strong>
+    </div>
+
+    <div id="status" class="status">
+        Ready.
+    </div>
+
+    <div class="legend">
+        <div>
+            <span class="box" style="background:#dbeafe"></span>
+            Start
+        </div>
+
+        <div>
+            <span class="box" style="background:#dcfce7"></span>
+            Goal
+        </div>
+
+        <div>
+            <span class="box" style="background:#fef3c7"></span>
+            DP trajectory
+        </div>
+
+        <div>
+            <span class="box" style="background:#111827"></span>
+            Wheelchair
+        </div>
+    </div>
+
+</aside>
+
+</main>
+
+
+<script>
+
+let data;
+let current = 0;
+let timer = null;
+
+async function initialise() {
+
+    const response = await fetch("dp_trajectory.json");
+    data = await response.json();
+
+    document.getElementById("algorithm").textContent =
+        "Value Iteration";
+
+    document.getElementById("iterations").textContent =
+        data.iterations;
+
+    document.getElementById("actions").textContent =
+        data.actions;
+
+    document.getElementById("reward").textContent =
+        data.total_reward.toFixed(1);
+
+    createGrid();
+
+    showStep(0);
+}
+
+
+function createGrid() {
+
+    const grid = document.getElementById("grid");
+
+    grid.style.gridTemplateColumns =
+        `repeat(${data.cols}, 1fr)`;
+
+    grid.style.gridTemplateRows =
+        `repeat(${data.rows}, 1fr)`;
+
+    grid.innerHTML = "";
+
+    for (let row = 0; row < data.rows; row++) {
+
+        for (let col = 0; col < data.cols; col++) {
+
+            const cell = document.createElement("div");
+
+            cell.className = "cell";
+            cell.id = `cell-${row}-${col}`;
+
+            if (
+                row === data.start[0] &&
+                col === data.start[1]
+            ) {
+                cell.classList.add("start");
+
+                const marker = document.createElement("div");
+                marker.className = "marker start-marker";
+                marker.textContent = "A";
+
+                cell.appendChild(marker);
+            }
+
+            if (
+                row === data.goal[0] &&
+                col === data.goal[1]
+            ) {
+                cell.classList.add("goal");
+
+                const marker = document.createElement("div");
+                marker.className = "marker goal-marker";
+                marker.textContent = "B";
+
+                cell.appendChild(marker);
+            }
+
+            grid.appendChild(cell);
+        }
+    }
+}
+
+
+function headingArrow(heading) {
+
+    if (heading === "NORTH") return "↑";
+    if (heading === "EAST")  return "→";
+    if (heading === "SOUTH") return "↓";
+    if (heading === "WEST")  return "←";
+
+    return "●";
+}
+
+
+function showStep(index) {
+
+    if (index >= data.steps.length)
+        return;
+
+    const step = data.steps[index];
+
+    document
+        .querySelectorAll("#wheelchair")
+        .forEach(el => el.remove());
+
+    const cell = document.getElementById(
+        `cell-${step.row}-${step.col}`
+    );
+
+    cell.classList.add("visited");
+
+    const wheelchair =
+        document.createElement("div");
+
+    wheelchair.id = "wheelchair";
+
+    wheelchair.textContent =
+        headingArrow(step.heading);
+
+    cell.appendChild(wheelchair);
+
+    document.getElementById("step").textContent =
+        `${step.step} / ${data.actions}`;
+
+    document.getElementById("position").textContent =
+        `(${step.row}, ${step.col})`;
+
+    document.getElementById("heading").textContent =
+        step.heading;
+
+    document.getElementById("action").textContent =
+        step.action;
+
+    if (index === 0) {
+
+        document.getElementById("status").textContent =
+            "Wheelchair at start position A.";
+
+    } else if (index === data.steps.length - 1) {
+
+        document.getElementById("status").innerHTML =
+            "<strong>Goal reached ✓</strong><br>" +
+            `DP reached B in ${data.actions} actions.`;
+
+        pause();
+
+    } else {
+
+        document.getElementById("status").textContent =
+            `Policy selected ${step.action}.`;
+    }
+}
+
+
+function nextStep() {
+
+    if (current >= data.steps.length - 1)
+        return;
+
+    current++;
+
+    showStep(current);
+}
+
+
+function play() {
+
+    if (timer)
+        return;
+
+    timer = setInterval(() => {
+
+        if (current >= data.steps.length - 1) {
+            pause();
+            return;
+        }
+
+        nextStep();
+
+    }, 250);
+}
+
+
+function pause() {
+
+    if (timer) {
+        clearInterval(timer);
+        timer = null;
+    }
+}
+
+
+function resetSimulation() {
+
+    pause();
+
+    current = 0;
+
+    document
+        .querySelectorAll(".visited")
+        .forEach(cell =>
+            cell.classList.remove("visited")
+        );
+
+    showStep(0);
+}
+
+
+initialise();
+
+</script>
+
+</body>
+</html>

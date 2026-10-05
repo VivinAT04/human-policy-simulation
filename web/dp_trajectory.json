@@ -1,0 +1,307 @@
+{
+  "algorithm": "Dynamic Programming \u2014 Value Iteration",
+  "rows": 20,
+  "cols": 20,
+  "start": [
+    18,
+    1
+  ],
+  "goal": [
+    1,
+    18
+  ],
+  "success": true,
+  "iterations": 39,
+  "actions": 35,
+  "total_reward": 66.0,
+  "steps": [
+    {
+      "step": 0,
+      "row": 18,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "START",
+      "reward": 0.0
+    },
+    {
+      "step": 1,
+      "row": 17,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 2,
+      "row": 16,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 3,
+      "row": 15,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 4,
+      "row": 14,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 5,
+      "row": 13,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 6,
+      "row": 12,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 7,
+      "row": 11,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 8,
+      "row": 10,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 9,
+      "row": 9,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 10,
+      "row": 8,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 11,
+      "row": 7,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 12,
+      "row": 6,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 13,
+      "row": 5,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 14,
+      "row": 4,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 15,
+      "row": 3,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 16,
+      "row": 2,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 17,
+      "row": 1,
+      "col": 1,
+      "heading": "NORTH",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 18,
+      "row": 1,
+      "col": 1,
+      "heading": "EAST",
+      "action": "RIGHT",
+      "reward": -1.0
+    },
+    {
+      "step": 19,
+      "row": 1,
+      "col": 2,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 20,
+      "row": 1,
+      "col": 3,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 21,
+      "row": 1,
+      "col": 4,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 22,
+      "row": 1,
+      "col": 5,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 23,
+      "row": 1,
+      "col": 6,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 24,
+      "row": 1,
+      "col": 7,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 25,
+      "row": 1,
+      "col": 8,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 26,
+      "row": 1,
+      "col": 9,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 27,
+      "row": 1,
+      "col": 10,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 28,
+      "row": 1,
+      "col": 11,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 29,
+      "row": 1,
+      "col": 12,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 30,
+      "row": 1,
+      "col": 13,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 31,
+      "row": 1,
+      "col": 14,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 32,
+      "row": 1,
+      "col": 15,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 33,
+      "row": 1,
+      "col": 16,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 34,
+      "row": 1,
+      "col": 17,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": -1.0
+    },
+    {
+      "step": 35,
+      "row": 1,
+      "col": 18,
+      "heading": "EAST",
+      "action": "FORWARD",
+      "reward": 100.0
+    }
+  ]
+}
