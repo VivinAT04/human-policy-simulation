@@ -893,10 +893,10 @@
         "col": 18
       },
       "success": true,
-      "total_actions": 40,
-      "total_reward": 61.0,
+      "total_actions": 51,
+      "total_reward": 50.0,
       "blocked_moves": 0,
-      "average_planning_ms": 17.659280150201084,
+      "average_planning_ms": 19.243656842887752,
       "extra": {
         "simulations_per_action": 400,
         "rollout_depth": 80,
@@ -950,18 +950,18 @@
         {
           "step": 4,
           "state": {
-            "row": 14,
+            "row": 15,
             "col": 1,
             "heading": "NORTH"
           },
-          "action": "FORWARD",
+          "action": "STOP",
           "reward": -1.0,
           "blocked": false
         },
         {
           "step": 5,
           "state": {
-            "row": 13,
+            "row": 14,
             "col": 1,
             "heading": "NORTH"
           },
@@ -972,7 +972,7 @@
         {
           "step": 6,
           "state": {
-            "row": 12,
+            "row": 13,
             "col": 1,
             "heading": "NORTH"
           },
@@ -983,7 +983,7 @@
         {
           "step": 7,
           "state": {
-            "row": 11,
+            "row": 12,
             "col": 1,
             "heading": "NORTH"
           },
@@ -994,7 +994,7 @@
         {
           "step": 8,
           "state": {
-            "row": 10,
+            "row": 11,
             "col": 1,
             "heading": "NORTH"
           },
@@ -1005,7 +1005,7 @@
         {
           "step": 9,
           "state": {
-            "row": 9,
+            "row": 10,
             "col": 1,
             "heading": "NORTH"
           },
@@ -1016,8 +1016,41 @@
         {
           "step": 10,
           "state": {
-            "row": 8,
+            "row": 10,
             "col": 1,
+            "heading": "EAST"
+          },
+          "action": "RIGHT",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 11,
+          "state": {
+            "row": 10,
+            "col": 2,
+            "heading": "EAST"
+          },
+          "action": "FORWARD",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 12,
+          "state": {
+            "row": 10,
+            "col": 2,
+            "heading": "NORTH"
+          },
+          "action": "LEFT",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 13,
+          "state": {
+            "row": 9,
+            "col": 2,
             "heading": "NORTH"
           },
           "action": "FORWARD",
@@ -1025,43 +1058,10 @@
           "blocked": false
         },
         {
-          "step": 11,
-          "state": {
-            "row": 8,
-            "col": 1,
-            "heading": "NORTH"
-          },
-          "action": "STOP",
-          "reward": -1.0,
-          "blocked": false
-        },
-        {
-          "step": 12,
-          "state": {
-            "row": 8,
-            "col": 1,
-            "heading": "NORTH"
-          },
-          "action": "STOP",
-          "reward": -1.0,
-          "blocked": false
-        },
-        {
-          "step": 13,
-          "state": {
-            "row": 8,
-            "col": 1,
-            "heading": "NORTH"
-          },
-          "action": "STOP",
-          "reward": -1.0,
-          "blocked": false
-        },
-        {
           "step": 14,
           "state": {
-            "row": 8,
-            "col": 1,
+            "row": 9,
+            "col": 2,
             "heading": "NORTH"
           },
           "action": "STOP",
@@ -1071,8 +1071,8 @@
         {
           "step": 15,
           "state": {
-            "row": 7,
-            "col": 1,
+            "row": 8,
+            "col": 2,
             "heading": "NORTH"
           },
           "action": "FORWARD",
@@ -1082,63 +1082,63 @@
         {
           "step": 16,
           "state": {
-            "row": 6,
-            "col": 1,
-            "heading": "NORTH"
+            "row": 8,
+            "col": 2,
+            "heading": "WEST"
           },
-          "action": "FORWARD",
+          "action": "LEFT",
           "reward": -1.0,
           "blocked": false
         },
         {
           "step": 17,
           "state": {
-            "row": 5,
-            "col": 1,
-            "heading": "NORTH"
-          },
-          "action": "FORWARD",
-          "reward": -1.0,
-          "blocked": false
-        },
-        {
-          "step": 18,
-          "state": {
-            "row": 4,
-            "col": 1,
-            "heading": "NORTH"
-          },
-          "action": "FORWARD",
-          "reward": -1.0,
-          "blocked": false
-        },
-        {
-          "step": 19,
-          "state": {
-            "row": 3,
-            "col": 1,
-            "heading": "NORTH"
-          },
-          "action": "FORWARD",
-          "reward": -1.0,
-          "blocked": false
-        },
-        {
-          "step": 20,
-          "state": {
-            "row": 3,
-            "col": 1,
-            "heading": "NORTH"
+            "row": 8,
+            "col": 2,
+            "heading": "WEST"
           },
           "action": "STOP",
           "reward": -1.0,
           "blocked": false
         },
         {
+          "step": 18,
+          "state": {
+            "row": 8,
+            "col": 2,
+            "heading": "WEST"
+          },
+          "action": "STOP",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 19,
+          "state": {
+            "row": 8,
+            "col": 2,
+            "heading": "WEST"
+          },
+          "action": "STOP",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 20,
+          "state": {
+            "row": 8,
+            "col": 2,
+            "heading": "NORTH"
+          },
+          "action": "RIGHT",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
           "step": 21,
           "state": {
-            "row": 2,
-            "col": 1,
+            "row": 7,
+            "col": 2,
             "heading": "NORTH"
           },
           "action": "FORWARD",
@@ -1148,8 +1148,8 @@
         {
           "step": 22,
           "state": {
-            "row": 1,
-            "col": 1,
+            "row": 6,
+            "col": 2,
             "heading": "NORTH"
           },
           "action": "FORWARD",
@@ -1159,8 +1159,8 @@
         {
           "step": 23,
           "state": {
-            "row": 1,
-            "col": 1,
+            "row": 6,
+            "col": 2,
             "heading": "EAST"
           },
           "action": "RIGHT",
@@ -1170,16 +1170,137 @@
         {
           "step": 24,
           "state": {
-            "row": 1,
+            "row": 6,
             "col": 2,
-            "heading": "EAST"
+            "heading": "NORTH"
+          },
+          "action": "LEFT",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 25,
+          "state": {
+            "row": 6,
+            "col": 2,
+            "heading": "NORTH"
+          },
+          "action": "STOP",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 26,
+          "state": {
+            "row": 5,
+            "col": 2,
+            "heading": "NORTH"
           },
           "action": "FORWARD",
           "reward": -1.0,
           "blocked": false
         },
         {
-          "step": 25,
+          "step": 27,
+          "state": {
+            "row": 4,
+            "col": 2,
+            "heading": "NORTH"
+          },
+          "action": "FORWARD",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 28,
+          "state": {
+            "row": 3,
+            "col": 2,
+            "heading": "NORTH"
+          },
+          "action": "FORWARD",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 29,
+          "state": {
+            "row": 3,
+            "col": 2,
+            "heading": "NORTH"
+          },
+          "action": "STOP",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 30,
+          "state": {
+            "row": 3,
+            "col": 2,
+            "heading": "EAST"
+          },
+          "action": "RIGHT",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 31,
+          "state": {
+            "row": 3,
+            "col": 2,
+            "heading": "NORTH"
+          },
+          "action": "LEFT",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 32,
+          "state": {
+            "row": 2,
+            "col": 2,
+            "heading": "NORTH"
+          },
+          "action": "FORWARD",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 33,
+          "state": {
+            "row": 1,
+            "col": 2,
+            "heading": "NORTH"
+          },
+          "action": "FORWARD",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 34,
+          "state": {
+            "row": 1,
+            "col": 2,
+            "heading": "EAST"
+          },
+          "action": "RIGHT",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 35,
+          "state": {
+            "row": 1,
+            "col": 2,
+            "heading": "EAST"
+          },
+          "action": "STOP",
+          "reward": -1.0,
+          "blocked": false
+        },
+        {
+          "step": 36,
           "state": {
             "row": 1,
             "col": 3,
@@ -1190,7 +1311,7 @@
           "blocked": false
         },
         {
-          "step": 26,
+          "step": 37,
           "state": {
             "row": 1,
             "col": 4,
@@ -1201,7 +1322,7 @@
           "blocked": false
         },
         {
-          "step": 27,
+          "step": 38,
           "state": {
             "row": 1,
             "col": 5,
@@ -1212,7 +1333,7 @@
           "blocked": false
         },
         {
-          "step": 28,
+          "step": 39,
           "state": {
             "row": 1,
             "col": 6,
@@ -1223,7 +1344,7 @@
           "blocked": false
         },
         {
-          "step": 29,
+          "step": 40,
           "state": {
             "row": 1,
             "col": 7,
@@ -1234,7 +1355,7 @@
           "blocked": false
         },
         {
-          "step": 30,
+          "step": 41,
           "state": {
             "row": 1,
             "col": 8,
@@ -1245,7 +1366,7 @@
           "blocked": false
         },
         {
-          "step": 31,
+          "step": 42,
           "state": {
             "row": 1,
             "col": 9,
@@ -1256,7 +1377,7 @@
           "blocked": false
         },
         {
-          "step": 32,
+          "step": 43,
           "state": {
             "row": 1,
             "col": 10,
@@ -1267,7 +1388,7 @@
           "blocked": false
         },
         {
-          "step": 33,
+          "step": 44,
           "state": {
             "row": 1,
             "col": 11,
@@ -1278,7 +1399,7 @@
           "blocked": false
         },
         {
-          "step": 34,
+          "step": 45,
           "state": {
             "row": 1,
             "col": 12,
@@ -1289,7 +1410,7 @@
           "blocked": false
         },
         {
-          "step": 35,
+          "step": 46,
           "state": {
             "row": 1,
             "col": 13,
@@ -1300,7 +1421,7 @@
           "blocked": false
         },
         {
-          "step": 36,
+          "step": 47,
           "state": {
             "row": 1,
             "col": 14,
@@ -1311,7 +1432,7 @@
           "blocked": false
         },
         {
-          "step": 37,
+          "step": 48,
           "state": {
             "row": 1,
             "col": 15,
@@ -1322,7 +1443,7 @@
           "blocked": false
         },
         {
-          "step": 38,
+          "step": 49,
           "state": {
             "row": 1,
             "col": 16,
@@ -1333,7 +1454,7 @@
           "blocked": false
         },
         {
-          "step": 39,
+          "step": 50,
           "state": {
             "row": 1,
             "col": 17,
@@ -1344,7 +1465,7 @@
           "blocked": false
         },
         {
-          "step": 40,
+          "step": 51,
           "state": {
             "row": 1,
             "col": 18,
