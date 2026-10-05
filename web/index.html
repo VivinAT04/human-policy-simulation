@@ -197,12 +197,6 @@ button {
 </head>
 
 <body>
-
-<header>
-    <h1>Human Policy Simulation</h1>
-    <p>Dynamic Programming · Value Iteration · 20×20 Wheelchair Grid</p>
-</header>
-
 <main>
 
 <section class="panel">
@@ -212,10 +206,48 @@ button {
     </div>
 
     <div class="controls">
-        <button class="primary" onclick="play()">▶ Run DP</button>
-        <button class="secondary" onclick="pause()">⏸ Pause</button>
-        <button class="secondary" onclick="nextStep()">Next Step</button>
-        <button class="secondary" onclick="resetSimulation()">Reset</button>
+
+        <select
+            id="policySelect"
+            onchange="changePolicy(this.value)"
+            style="
+                padding:10px 14px;
+                border:1px solid #d1d5db;
+                border-radius:8px;
+                background:white;
+                font-weight:700;
+                min-width:210px;
+            "
+        >
+            <option value="dp">
+                Dynamic Programming
+            </option>
+
+            <option value="q_learning">
+                Q-Learning
+            </option>
+
+            <option value="mcts">
+                MCTS
+            </option>
+        </select>
+
+        <button class="primary" onclick="play()">
+            ▶ Run
+        </button>
+
+        <button class="secondary" onclick="pause()">
+            ⏸ Pause
+        </button>
+
+        <button class="secondary" onclick="nextStep()">
+            Next Step
+        </button>
+
+        <button class="secondary" onclick="resetSimulation()">
+            Reset
+        </button>
+
     </div>
 
 </section>
@@ -251,7 +283,7 @@ button {
     </div>
 
     <div class="metric">
-        <small>DP Convergence</small>
+        <small id="specialLabel">DP Convergence</small>
         <strong id="iterations">—</strong>
     </div>
 
@@ -282,7 +314,7 @@ button {
 
         <div>
             <span class="box" style="background:#fef3c7"></span>
-            DP trajectory
+            <span id="trajectoryLabel">DP trajectory</span>
         </div>
 
         <div>
@@ -298,36 +330,178 @@ button {
 
 <script>
 
+let simulationData;
 let data;
+let currentPolicy = "dp";
 let current = 0;
 let timer = null;
 
+
 async function initialise() {
 
-    const response = await fetch("dp_trajectory.json");
-    data = await response.json();
+    const response = await fetch(
+        "policy_trajectories.json?ts=" + Date.now()
+    );
 
-    document.getElementById("algorithm").textContent =
-        "Value Iteration";
+    if (!response.ok) {
+        throw new Error(
+            "Could not load policy_trajectories.json"
+        );
+    }
 
-    document.getElementById("iterations").textContent =
-        data.iterations;
+    simulationData = await response.json();
 
-    document.getElementById("actions").textContent =
+    changePolicy(
+        simulationData.default_policy || "dp"
+    );
+}
+
+
+function convertPolicyData(policy) {
+
+    return {
+        rows: policy.rows,
+        cols: policy.cols,
+
+        start: [
+            policy.start.row,
+            policy.start.col
+        ],
+
+        goal: [
+            policy.goal.row,
+            policy.goal.col
+        ],
+
+        actions: policy.total_actions,
+        total_reward: policy.total_reward,
+        blocked_moves: policy.blocked_moves,
+        success: policy.success,
+
+        display_name: policy.display_name,
+        algorithm: policy.algorithm,
+
+        average_planning_ms:
+            policy.average_planning_ms,
+
+        extra: policy.extra,
+
+        steps: policy.trajectory.map(item => ({
+            step: item.step,
+            row: item.state.row,
+            col: item.state.col,
+            heading: item.state.heading,
+            action: item.action,
+            reward: item.reward,
+            blocked: item.blocked
+        }))
+    };
+}
+
+
+function changePolicy(policyId) {
+
+    pause();
+
+    currentPolicy = policyId;
+
+    document.getElementById(
+        "policySelect"
+    ).value = policyId;
+
+    const raw =
+        simulationData.policies[policyId];
+
+    data = convertPolicyData(raw);
+
+    current = 0;
+
+    updatePolicyPanel();
+    createGrid();
+    showStep(0);
+}
+
+
+function updatePolicyPanel() {
+
+    document.getElementById(
+        "algorithm"
+    ).textContent =
+        data.algorithm;
+
+    document.getElementById(
+        "actions"
+    ).textContent =
         data.actions;
 
-    document.getElementById("reward").textContent =
-        data.total_reward.toFixed(1);
+    document.getElementById(
+        "reward"
+    ).textContent =
+        Number(
+            data.total_reward
+        ).toFixed(1);
 
-    createGrid();
+    const label =
+        document.getElementById(
+            "specialLabel"
+        );
 
-    showStep(0);
+    const value =
+        document.getElementById(
+            "iterations"
+        );
+
+    const trajectoryLabel =
+        document.getElementById(
+            "trajectoryLabel"
+        );
+
+    if (currentPolicy === "dp") {
+
+        label.textContent =
+            "DP Convergence";
+
+        value.textContent =
+            data.extra.convergence_iterations;
+
+        trajectoryLabel.textContent =
+            "DP trajectory";
+
+    } else if (
+        currentPolicy === "q_learning"
+    ) {
+
+        label.textContent =
+            "Training";
+
+        value.textContent =
+            Number(
+                data.extra.training_episodes
+            ).toLocaleString() +
+            " episodes";
+
+        trajectoryLabel.textContent =
+            "Q-Learning trajectory";
+
+    } else {
+
+        label.textContent =
+            "Search Budget";
+
+        value.textContent =
+            data.extra.simulations_per_action +
+            " simulations/action";
+
+        trajectoryLabel.textContent =
+            "MCTS trajectory";
+    }
 }
 
 
 function createGrid() {
 
-    const grid = document.getElementById("grid");
+    const grid =
+        document.getElementById("grid");
 
     grid.style.gridTemplateColumns =
         `repeat(${data.cols}, 1fr)`;
@@ -337,39 +511,72 @@ function createGrid() {
 
     grid.innerHTML = "";
 
-    for (let row = 0; row < data.rows; row++) {
+    for (
+        let row = 0;
+        row < data.rows;
+        row++
+    ) {
 
-        for (let col = 0; col < data.cols; col++) {
+        for (
+            let col = 0;
+            col < data.cols;
+            col++
+        ) {
 
-            const cell = document.createElement("div");
+            const cell =
+                document.createElement("div");
 
             cell.className = "cell";
-            cell.id = `cell-${row}-${col}`;
+
+            cell.id =
+                `cell-${row}-${col}`;
 
             if (
                 row === data.start[0] &&
                 col === data.start[1]
             ) {
-                cell.classList.add("start");
 
-                const marker = document.createElement("div");
-                marker.className = "marker start-marker";
+                cell.classList.add(
+                    "start"
+                );
+
+                const marker =
+                    document.createElement(
+                        "div"
+                    );
+
+                marker.className =
+                    "marker start-marker";
+
                 marker.textContent = "A";
 
-                cell.appendChild(marker);
+                cell.appendChild(
+                    marker
+                );
             }
 
             if (
                 row === data.goal[0] &&
                 col === data.goal[1]
             ) {
-                cell.classList.add("goal");
 
-                const marker = document.createElement("div");
-                marker.className = "marker goal-marker";
+                cell.classList.add(
+                    "goal"
+                );
+
+                const marker =
+                    document.createElement(
+                        "div"
+                    );
+
+                marker.className =
+                    "marker goal-marker";
+
                 marker.textContent = "B";
 
-                cell.appendChild(marker);
+                cell.appendChild(
+                    marker
+                );
             }
 
             grid.appendChild(cell);
@@ -380,10 +587,17 @@ function createGrid() {
 
 function headingArrow(heading) {
 
-    if (heading === "NORTH") return "↑";
-    if (heading === "EAST")  return "→";
-    if (heading === "SOUTH") return "↓";
-    if (heading === "WEST")  return "←";
+    if (heading === "NORTH")
+        return "↑";
+
+    if (heading === "EAST")
+        return "→";
+
+    if (heading === "SOUTH")
+        return "↓";
+
+    if (heading === "WEST")
+        return "←";
 
     return "●";
 }
@@ -391,72 +605,119 @@ function headingArrow(heading) {
 
 function showStep(index) {
 
-    if (index >= data.steps.length)
+    if (
+        index >= data.steps.length
+    ) {
         return;
+    }
 
-    const step = data.steps[index];
+    const step =
+        data.steps[index];
 
     document
-        .querySelectorAll("#wheelchair")
-        .forEach(el => el.remove());
+        .querySelectorAll(
+            "#wheelchair"
+        )
+        .forEach(
+            el => el.remove()
+        );
 
-    const cell = document.getElementById(
-        `cell-${step.row}-${step.col}`
+    const cell =
+        document.getElementById(
+            `cell-${step.row}-${step.col}`
+        );
+
+    if (!cell) {
+        return;
+    }
+
+    cell.classList.add(
+        "visited"
     );
 
-    cell.classList.add("visited");
-
     const wheelchair =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
-    wheelchair.id = "wheelchair";
+    wheelchair.id =
+        "wheelchair";
 
     wheelchair.textContent =
-        headingArrow(step.heading);
+        headingArrow(
+            step.heading
+        );
 
-    cell.appendChild(wheelchair);
+    cell.appendChild(
+        wheelchair
+    );
 
-    document.getElementById("step").textContent =
+    document.getElementById(
+        "step"
+    ).textContent =
         `${step.step} / ${data.actions}`;
 
-    document.getElementById("position").textContent =
+    document.getElementById(
+        "position"
+    ).textContent =
         `(${step.row}, ${step.col})`;
 
-    document.getElementById("heading").textContent =
+    document.getElementById(
+        "heading"
+    ).textContent =
         step.heading;
 
-    document.getElementById("action").textContent =
+    document.getElementById(
+        "action"
+    ).textContent =
         step.action;
+
+    const status =
+        document.getElementById(
+            "status"
+        );
 
     if (index === 0) {
 
-        document.getElementById("status").textContent =
-            "Wheelchair at start position A.";
+        status.textContent =
+            `Wheelchair at start position A. ` +
+            `${data.display_name} ready.`;
 
-    } else if (index === data.steps.length - 1) {
+    } else if (
+        index ===
+        data.steps.length - 1
+    ) {
 
-        document.getElementById("status").innerHTML =
+        status.innerHTML =
             "<strong>Goal reached ✓</strong><br>" +
-            `DP reached B in ${data.actions} actions.`;
+            `${data.display_name} reached B ` +
+            `in ${data.actions} actions.`;
 
         pause();
 
     } else {
 
-        document.getElementById("status").textContent =
-            `Policy selected ${step.action}.`;
+        status.textContent =
+            `${data.display_name} selected ` +
+            `${step.action}.`;
     }
 }
 
 
 function nextStep() {
 
-    if (current >= data.steps.length - 1)
+    if (
+        current >=
+        data.steps.length - 1
+    ) {
         return;
+    }
 
     current++;
 
-    showStep(current);
+    showStep(
+        current
+    );
 }
 
 
@@ -465,23 +726,40 @@ function play() {
     if (timer)
         return;
 
-    timer = setInterval(() => {
+    if (
+        current >=
+        data.steps.length - 1
+    ) {
+        resetSimulation();
+    }
 
-        if (current >= data.steps.length - 1) {
-            pause();
-            return;
-        }
+    timer = setInterval(
+        () => {
 
-        nextStep();
+            if (
+                current >=
+                data.steps.length - 1
+            ) {
+                pause();
+                return;
+            }
 
-    }, 250);
+            nextStep();
+
+        },
+        250
+    );
 }
 
 
 function pause() {
 
     if (timer) {
-        clearInterval(timer);
+
+        clearInterval(
+            timer
+        );
+
         timer = null;
     }
 }
@@ -494,16 +772,38 @@ function resetSimulation() {
     current = 0;
 
     document
-        .querySelectorAll(".visited")
-        .forEach(cell =>
-            cell.classList.remove("visited")
+        .querySelectorAll(
+            ".visited"
+        )
+        .forEach(
+            cell =>
+                cell.classList.remove(
+                    "visited"
+                )
+        );
+
+    document
+        .querySelectorAll(
+            "#wheelchair"
+        )
+        .forEach(
+            el => el.remove()
         );
 
     showStep(0);
 }
 
 
-initialise();
+initialise().catch(error => {
+
+    console.error(error);
+
+    document.getElementById(
+        "status"
+    ).textContent =
+        "Failed to load policy data: " +
+        error.message;
+});
 
 </script>
 
